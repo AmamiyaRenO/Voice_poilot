@@ -8,6 +8,11 @@ public class Spawner : MonoBehaviour
     public float maxHeight = 2f;
     public float verticalGap = 3f;
 
+    public void SetGap(float gap)
+    {
+        verticalGap = gap;
+    }
+
     private void OnEnable()
     {
         InvokeRepeating(nameof(Spawn), spawnRate, spawnRate);
@@ -24,5 +29,4 @@ public class Spawner : MonoBehaviour
         pipes.transform.position += Vector3.up * Random.Range(minHeight, maxHeight);
         pipes.gap = verticalGap;
     }
-
 }
