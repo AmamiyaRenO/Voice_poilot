@@ -18,7 +18,8 @@ public class Pipes : MonoBehaviour
 
     private void Update()
     {
-        transform.position += speed * Time.deltaTime * Vector3.left;
+        float currentSpeed = speed * Player.RushWorldSpeedMultiplier;
+        transform.position += currentSpeed * Time.deltaTime * Vector3.left;
 
         if (transform.position.x < leftEdge) {
             Destroy(gameObject);

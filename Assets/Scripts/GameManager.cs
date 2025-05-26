@@ -18,7 +18,7 @@ public class GameManager : MonoBehaviour
 
     // 难度相关参数
     public Difficulty CurrentDifficulty { get; private set; } = Difficulty.Normal;
-    public float easyGap = 20.0f;
+    public float easyGap = 3.0f;
     public float normalGap = 3.0f;
     public float hardGap = 2.0f;
 

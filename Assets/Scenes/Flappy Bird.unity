@@ -279,6 +279,9 @@ MonoBehaviour:
   scoreText: {fileID: 1474871343}
   playButton: {fileID: 892178073}
   gameOver: {fileID: 298509898}
+  easyGap: 5
+  normalGap: 3
+  hardGap: 2
 --- !u!4 &149568775
 Transform:
   m_ObjectHideFlags: 0
@@ -597,6 +600,10 @@ MonoBehaviour:
   threshold: 0.1
   cooldownTime: 0.2
   volumeText: {fileID: 532365659}
+  collectedLetters: 
+  isRushing: 0
+  rushDuration: 1.5
+  rushSpeed: 15
 --- !u!1 &532365658
 GameObject:
   m_ObjectHideFlags: 0
@@ -1433,3 +1440,8 @@ MonoBehaviour:
   minHeight: -1
   maxHeight: 2
   verticalGap: 3
+  letterPrefabs:
+  - {fileID: 3528328505748171283, guid: db6a55d16e14a604e97f308c1abd02f3, type: 3}
+  - {fileID: 8414946673916770640, guid: 04a7c1d1415f90845a7bbf574c0b74cc, type: 3}
+  - {fileID: 932774778485353582, guid: c5a050767923b9c4888edd226da91c52, type: 3}
+  - {fileID: 5471880235255607398, guid: a6b9cb8dac2f516429d2845074092c52, type: 3}

@@ -85,7 +85,8 @@ public class VoskSpeechToText : MonoBehaviour
 	//If Auto start is enabled, starts vosk speech to text.
 	void Start()
 	{
-		KeyPhrases = new List<string> { "easy mode", "normal mode", "hard mode" };
+		KeyPhrases = new List<string> { "easy mode", "normal mode", "hard mode", "rush" };
+		OnTranscriptionResult += HandleDifficultyCommand;
 		if (AutoStart)
 		{
 			StartVoskStt();
@@ -365,6 +366,16 @@ public class VoskSpeechToText : MonoBehaviour
 			{
 				GameManager.Instance.SetDifficulty(Difficulty.Hard);
 				Debug.Log("Switched to HARD mode");
+				return;
+			}
+			else if (text.Contains("rush"))
+			{
+				var player = FindObjectOfType<Player>();
+				if (player != null)
+				{
+					player.Rush();
+					Debug.Log("触发RUSH技能");
+				}
 				return;
 			}
 		}

@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine.UI; // Add UI namespace
 using System;
+using System.Collections.Generic; // 文件顶部已引入则不用重复
 
 public class Player : MonoBehaviour
 {
@@ -31,6 +32,15 @@ public class Player : MonoBehaviour
     private float calibrationMaxPeak = 0f;
     private bool isCalibrating = false;
 
+    public List<char> collectedLetters = new List<char>();
+
+    public bool isRushing = false;
+    public float rushDuration = 1.5f; // 冲刺持续时间
+    public float rushSpeed = 15f;     // 冲刺速度
+    private float rushEndTime = 0f;
+
+    public static float RushWorldSpeedMultiplier = 1f;
+
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -39,7 +49,7 @@ public class Player : MonoBehaviour
             // 优先查找VoskManager上的VoiceProcessor
             var voskManager = FindObjectOfType<VoskSpeechToText>();
             if (voskManager != null && voskManager.VoiceProcessor != null)
-        {
+            {
                 voiceProcessor = voskManager.VoiceProcessor;
                 Debug.Log("使用VoskManager上的VoiceProcessor");
             }
@@ -62,20 +72,6 @@ public class Player : MonoBehaviour
         voiceProcessor.OnFrameCaptured += OnAudioFrameCaptured;
         voiceProcessor.OnRecordingStart += OnRecordingStart;
         voiceProcessor.OnRecordingStop += OnRecordingStop;
-
-        // 只在游戏开始时开始录音，如果还没开始的话
-        if (!voiceProcessor.IsRecording)
-        {
-            try
-        {
-                Debug.Log("游戏开始时开始录音...");
-                voiceProcessor.StartRecording();
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"开始录音时出错: {e.Message}\n{e.StackTrace}");
-            }
-        }
     }
 
     private void OnDestroy()
@@ -90,7 +86,7 @@ public class Player : MonoBehaviour
 
     private void OnRecordingStart()
     {
-        Debug.Log("开始录音，进入校准模式");
+        //Debug.Log("开始录音，进入校准模式");
         isCalibrating = true;
         calibrationMaxPeak = 0f;
         StartCoroutine(CalibrateThreshold());
@@ -98,7 +94,7 @@ public class Player : MonoBehaviour
 
     private void OnRecordingStop()
     {
-        Debug.Log("停止录音，重置校准状态");
+        //Debug.Log("停止录音，重置校准状态");
         calibrated = false;
     }
 
@@ -117,7 +113,7 @@ public class Player : MonoBehaviour
             float newCalibrationPeak = calibrationSample * sensitivity;
             if (newCalibrationPeak > calibrationMaxPeak)
             {
-                Debug.Log($"校准中 - 发现新的最大峰值: {newCalibrationPeak:F2} (之前: {calibrationMaxPeak:F2})");
+                //Debug.Log($"校准中 - 发现新的最大峰值: {newCalibrationPeak:F2} (之前: {calibrationMaxPeak:F2})");
                 calibrationMaxPeak = newCalibrationPeak;
             }
             
@@ -168,14 +164,14 @@ public class Player : MonoBehaviour
 
     private IEnumerator CalibrateThreshold()
     {
-        Debug.Log("开始校准过程，持续2秒...");
+        //Debug.Log("开始校准过程，持续2秒...");
         float startTime = Time.time;
         while (Time.time - startTime < 2f)
         {
             float remainingTime = 2f - (Time.time - startTime);
             if (remainingTime % 0.5f < 0.1f)
             {
-                Debug.Log($"校准剩余时间: {remainingTime:F1}秒");
+                //Debug.Log($"校准剩余时间: {remainingTime:F1}秒");
             }
             yield return null;
         }
@@ -183,7 +179,7 @@ public class Player : MonoBehaviour
         threshold = calibrationMaxPeak * 0.9f;
         calibrated = true;
         isCalibrating = false;
-        Debug.Log($"校准完成！\n最大峰值: {calibrationMaxPeak:F2}\n设置阈值: {threshold:F2}");
+        //Debug.Log($"校准完成！\n最大峰值: {calibrationMaxPeak:F2}\n设置阈值: {threshold:F2}");
     }
 
     private void Start()
@@ -197,25 +193,23 @@ public class Player : MonoBehaviour
         position.y = 0f;
         transform.position = position;
         direction = Vector3.zero;
-
-        // 只在组件启用且未录音时开始录音
-        if (voiceProcessor != null && !voiceProcessor.IsRecording)
-        {
-            try
-            {
-                Debug.Log("Player组件启用时开始录音...");
-                voiceProcessor.UpdateDevices(); // 再次确保设备已更新
-                voiceProcessor.StartRecording();
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"启用时开始录音出错: {e.Message}\n{e.StackTrace}");
-            }
-        }
     }
 
     private void Update()
     {
+        Vector3 rotation = transform.eulerAngles; // 只声明一次
+
+        // rush期间不再让小鸟自己向右冲刺，只需要无敌和世界加速
+        if (isRushing)
+        {
+            direction = Vector3.zero;
+            rotation.z = 0f;
+            transform.eulerAngles = rotation;
+            // 不再有 transform.position += Vector3.right * rushSpeed * Time.deltaTime;
+            // 让小鸟保持水平即可
+            // 不return，继续执行后续逻辑（如重力、跳跃等可以根据需要保留或屏蔽）
+        }
+
         // Keep original keyboard and mouse input as backup
         if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0)) {
             direction = Vector3.up * strength;
@@ -224,7 +218,7 @@ public class Player : MonoBehaviour
         // Apply gravity and update the position
         if (!isCalibrating)  // 只在非校准期间应用重力
         {
-        direction.y += gravity * Time.deltaTime;
+            direction.y += gravity * Time.deltaTime;
         }
         else  // 在校准期间保持水平飞行
         {
@@ -233,7 +227,6 @@ public class Player : MonoBehaviour
         transform.position += direction * Time.deltaTime;
         
         // Tilt the bird based on the direction
-        Vector3 rotation = transform.eulerAngles;
         rotation.z = direction.y * tilt;
         transform.eulerAngles = rotation;
     }
@@ -253,10 +246,63 @@ public class Player : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        if (isRushing) return; // 冲刺期间无敌，直接忽略碰撞
+
         if (other.gameObject.CompareTag("Obstacle")) {
             GameManager.Instance.GameOver();
         } else if (other.gameObject.CompareTag("Scoring")) {
             GameManager.Instance.IncreaseScore();
         }
+    }
+
+    public void CollectLetter(char letter)
+    {
+        if (!collectedLetters.Contains(letter))
+        {
+            collectedLetters.Add(letter);
+            Debug.Log("收集到字母: " + letter);
+            // TODO: 更新UI
+
+            // 通知Spawner生成下一个字母
+            Spawner spawner = FindObjectOfType<Spawner>();
+            if (spawner != null)
+            {
+                spawner.NextRushLetter();
+            }
+        }
+    }
+
+    public void Rush()
+    {
+        if (collectedLetters.Contains('R') && collectedLetters.Contains('U') &&
+            collectedLetters.Contains('S') && collectedLetters.Contains('H') && !isRushing)
+        {
+            Debug.Log("RUSH技能发动！");
+            StartCoroutine(RushCoroutine());
+            collectedLetters.Clear();
+            // 通知Spawner重置rush字母
+            Spawner spawner = FindObjectOfType<Spawner>();
+            if (spawner != null)
+            {
+                spawner.ResetRushLetter();
+            }
+        }
+    }
+
+    private IEnumerator RushCoroutine()
+    {
+        isRushing = true;
+        RushWorldSpeedMultiplier = 3f; // rush期间世界加速3倍
+        rushEndTime = Time.time + rushDuration;
+        // 让小鸟无敌
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+
+        // 你可以加特效/音效等
+        yield return new WaitForSeconds(rushDuration);
+
+        isRushing = false;
+        if (col != null) col.enabled = true;
+        RushWorldSpeedMultiplier = 1f; // 恢复正常
     }
 }
